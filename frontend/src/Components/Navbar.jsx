@@ -5,7 +5,7 @@ import "./Nav.css";
 import { useNavigate } from "react-router-dom";
 
 function Navbar() {
-  const usrData = JSON.parse(localStorage.getItem("Data") || "{}");
+  const [usrData, setUsrData] = useState(JSON.parse(localStorage.getItem("Data") || "{}"));
   const [selectedItem, setSelectedItem] = useState(false);
   const [Selects, setSelect] = useState(false);
   const [user, setuser] = useState(JSON.parse(localStorage.getItem("Data") || "{}")["Id"]);
@@ -20,54 +20,86 @@ function Navbar() {
   };
 
   const handleOpen = () => {
-    if (user === -999) {
+    if (user === -999 || !usrData["Username"] || usrData["Username"] === "false") {
       history("/login/");
     } else {
       setSelect((Selects) => !Selects);
     }
   };
 
-  useEffect(() => {
-    if (user === -999) {
-      setuser(-999);
+  const handleNavClick = (e, path) => {
+    if (user === -999 || !usrData["Username"] || usrData["Username"] === "false") {
+      e.preventDefault();
+      history("/login/");
     }
+  };
+
+  // Update local state when localStorage changes
+  useEffect(() => {
+    const checkUserData = () => {
+      const currentData = JSON.parse(localStorage.getItem("Data") || "{}");
+      setUsrData(currentData);
+      setuser(currentData["Id"]);
+    };
+
+    // Check on mount
+    checkUserData();
+
+    // Set up an interval to check for changes (as a fallback)
+    const interval = setInterval(checkUserData, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   async function logout() {
-  try {
-    const token = JSON.parse(localStorage.getItem("token"));
-    localStorage.setItem(
-      "Data",
-      JSON.stringify({
+    try {
+      const token = JSON.parse(localStorage.getItem("token"));
+      
+      // Clear localStorage first
+      localStorage.clear();
+      
+      // Set the logged-out state
+      const loggedOutData = {
         User: "false",
         Username: "false",
         Id: -999,
         Group: "Student",
-      })
-    );
-    setSelect(false);
-    setuser(-999);
-    localStorage.clear();
-    delete axios.defaults.headers.common["Authorization"];
-    
-    console.log(JSON.parse(localStorage.getItem("Data") || "{}"));
-    console.log(token);
-    await axios.post(
-      "https://varshg.pythonanywhere.com/04D2430AAFE10AA4/logout/",
-      {},
-      {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
+      };
+      
+      localStorage.setItem("Data", JSON.stringify(loggedOutData));
+      
+      // Update component state immediately
+      setUsrData(loggedOutData);
+      setuser(-999);
+      setSelect(false);
+      
+      delete axios.defaults.headers.common["Authorization"];
+      
+      console.log("Logged out successfully");
+      
+      // Call logout API
+      if (token) {
+        await axios.post(
+          "https://varshg.pythonanywhere.com/04D2430AAFE10AA4/logout/",
+          {},
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+          }
+        );
       }
-    );
 
-    
-    
-  } catch (error) {
-    console.error("Logout failed:", error.response ? error.response.data : error.message);
+      // Redirect to home page after logout
+      history("/");
+      
+    } catch (error) {
+      console.error("Logout failed:", error.response ? error.response.data : error.message);
+    }
   }
-}
+
+  // Check if user is logged in
+  const isLoggedIn = user !== -999 && usrData["Username"] && usrData["Username"] !== "false";
 
   return (
     <nav className="fixed border-gray-200 z-50 top-0 bg-transparent max-w-screen z-[999] pb-2 w-screen mb-40 justify-center justify-content-center text-center bg-opacity-80 dark:bg-opacity-95">
@@ -78,33 +110,31 @@ function Navbar() {
           </h2>
           <span className="text-left Logo-sd font-bold text-4xl  whitespace-nowrap text-white dark:text-white">
             EduSpark
-            </span>
-
+          </span>
         </a>
         <div className="items-center md:order-2 space-x-3 mr-80 rtl:space-x-reverse ">
           <div
             className="relative"
-            onMouseEnter={() => setSelect(true)}
+            onMouseEnter={() => isLoggedIn && setSelect(true)}
             onMouseLeave={() => setSelect(false)}
           >
             <button
               type="button"
               className="flex px-3 mr-40 py-2 btn-txt rounded-xl md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-              
               onClick={handleOpen}
             >
               <span className="sr-only">Open user menu</span>
               <div className="">
-                {user !== -999 ? (
+                {isLoggedIn ? (
                   <p className="">{usrData["Username"]} ▼</p>
                 ) : (
-                  <a className="green text-white" href="/login/">
+                  <span className="green text-white cursor-pointer">
                     Log In
-                  </a>
+                  </span>
                 )}
               </div>
             </button>
-            {Selects && user !== -999 && (
+            {Selects && isLoggedIn && (
               <div className="absolute top-full content left-0 mt-1 bg-white divide-y divide-gray-100 rounded-lg shadow-xl dark:bg-white  dark:divide-gray-600">
                 <div className="px-4 py-3">
                   <span className="block text-sm  ">
@@ -114,7 +144,8 @@ function Navbar() {
                     {usrData["Id"]}
                   </span>
                 </div>
-                {(usrData["type"] === "Mentor" || usrData["userType"] === "Mentor") ? (<ul className="py-2" aria-labelledby="user-menu-button">
+                {(usrData["type"] === "Mentor" || usrData["userType"] === "Mentor") ? (
+                  <ul className="py-2" aria-labelledby="user-menu-button">
                     <li>
                       <a
                         href="/mentor/dashboard"
@@ -124,26 +155,25 @@ function Navbar() {
                       </a>
                     </li>
                     <li>
-                    <a href="/opportunities/"
-                      className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
-                      onClick={openPopup}
-                    >
-                      Opportunity
-                    </a>
-                  </li>
-
-                  
-                  
-                  <li>
-                    <a
-                      href="/"
-                      onClick={logout}
-                      className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
-                    >
-                      Sign out
-                    </a>
-                  </li>
-                </ul>):(<ul className="py-2" aria-labelledby="user-menu-button">
+                      <a href="/opportunities/"
+                        className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
+                        onClick={openPopup}
+                      >
+                        Opportunity
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="/"
+                        onClick={logout}
+                        className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
+                      >
+                        Sign out
+                      </a>
+                    </li>
+                  </ul>
+                ) : (
+                  <ul className="py-2" aria-labelledby="user-menu-button">
                     <li>
                       <a
                         href="/dashboard"
@@ -152,27 +182,25 @@ function Navbar() {
                         Dashboard
                       </a>
                     </li>
-                  
-
-                  <li>
-                    <a href="/opportunities/"
-                      className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
-                      onClick={openPopup}
-                    >
-                      Opportunity
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="/"
-                      onClick={logout}
-                      className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
-                    >
-                      Sign out
-                    </a>
-                  </li>
-                </ul>)}
-                
+                    <li>
+                      <a href="/opportunities/"
+                        className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
+                        onClick={openPopup}
+                      >
+                        Opportunity
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="/"
+                        onClick={logout}
+                        className="block px-4 py-2 text-sm  hover:bg-gray-100 text-black"
+                      >
+                        Sign out
+                      </a>
+                    </li>
+                  </ul>
+                )}
               </div>
             )}
           </div>
@@ -192,6 +220,7 @@ function Navbar() {
               <a
                 href="/dashboard/"
                 className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700"
+                onClick={(e) => handleNavClick(e, "/dashboard/")}
               >
                 Dashboard
               </a>
@@ -200,6 +229,7 @@ function Navbar() {
               <a
                 href="/opportunities/"
                 className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700"
+                onClick={(e) => handleNavClick(e, "/opportunities/")}
               >
                 Opportunities
               </a>
@@ -208,6 +238,7 @@ function Navbar() {
               <a
                 href="/Tasks/"
                 className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700"
+                onClick={(e) => handleNavClick(e, "/Tasks/")}
               >
                 Tasks
               </a>
@@ -243,7 +274,7 @@ function Navbar() {
                   <p className="">
                     <strong>Role</strong>
                     <br />
-                    {usrData["Groups"][0]}
+                    {usrData["Groups"] && usrData["Groups"][0]}
                   </p>
                 </div>
               </div>

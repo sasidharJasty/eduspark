@@ -4,8 +4,15 @@ import pattern from "./assets/pattern.png";
 import TaskGenerator from "./Components/TaskGenerator";
 import TodoList from "./Components/TodoList";
 import ChatbotBubble from "./Components/ChatbotBubble";
+import { useNavigate } from "react-router-dom";
 
 const Tasks = () => {
+  const usrData = JSON.parse(localStorage.getItem("Data") || '{"User":"Login","Age":0,"Username":"Login","Id":-999,"type":"Student"}');
+  console.log(usrData);
+  const history = useNavigate();
+  if (usrData["Id"] === -999) {
+    history("/");
+  }
   return (
     <div className="bg-[--background] relative h-screen !overflow-y-hidden ">
       <Navbar />

@@ -3,6 +3,7 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import Navbar from "./Components/Navbar";
 import pattern from "./assets/pattern.png";
+import FeatureShowcaseModal from './Components/FeatureShowcaseModal';
 
 import { motion } from 'framer-motion';
 import { TypeAnimation } from 'react-type-animation';
@@ -14,6 +15,7 @@ import ChatbotBubble from "./Components/ChatbotBubble";
 
 function App() {
   const [count, setCount] = useState(0);
+  const [showFeatureModal, setShowFeatureModal] = useState(false);
 
   return (
     <div className="bg-[--background] relative">
@@ -44,7 +46,16 @@ function App() {
             Our user-friendly interface makes it easy for anyone to find and receive help quickly.
             Join EduSpark today and discover how effortless getting the academic support you need can be!
           </p>
-          <a className='ml-5 mt-10 btn rounded-lg px-20 py-3 text-bold hover:bg-white mt-20' href="/login/">Get Started</a>
+          <div className='flex flex-col md:flex-row gap-4'>
+          <a className='ml-5 mt-10 btn rounded-lg px-20 py-3 text-bold hover:bg-white ' href="/login/">Get Started</a>
+          <button
+            onClick={() => setShowFeatureModal(true)}
+            className=" ml-5 mt-10 btn rounded-lg px-20 py-3 text-bold hover:bg-white  bg-gradient-to-r from-[#A46BEC] to-[#7a3ed6] hover:from-[#7a3ed6] hover:to-[#A46BEC] text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+          >
+            🚀
+            Explore All Features
+          </button>
+          </div>
         </div>
 
         {/* 💡 New impressive features below */}
@@ -53,6 +64,11 @@ function App() {
       <Navbar />
 
       <img src={pattern} style={{ height: "100vh" }} className="absolute top-0 right-0 z-[9] hue-rotate-[-250deg]" />
+
+      <FeatureShowcaseModal 
+        isOpen={showFeatureModal} 
+        onClose={() => setShowFeatureModal(false)} 
+      />
     </div>
   );
 }
