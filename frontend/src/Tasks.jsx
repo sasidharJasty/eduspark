@@ -5,7 +5,7 @@ import TaskGenerator from "./Components/TaskGenerator";
 import TodoList from "./Components/TodoList";
 import ChatbotBubble from "./Components/ChatbotBubble";
 import { useNavigate } from "react-router-dom";
-
+/*Fixed to function now */
 const Tasks = () => {
   const usrData = JSON.parse(localStorage.getItem("Data") || '{"User":"Login","Age":0,"Username":"Login","Id":-999,"type":"Student"}');
   console.log(usrData);
